@@ -1,5 +1,5 @@
-Cluster Service
-===============
+Clusterring Services
+====================
 What is this?
 --------------
 In distributed environment several time you will feel the requirement of implementing some consensus 
@@ -30,7 +30,7 @@ peer clusters. With this underlaying layer any consensus algorithm can be implem
 
 How to use it?
 -------------
-*Please refer to general guidelines of importing a github package*
+*Please refer to general guidelines for importing a github package. Import this package into your worksapce*
 - Cluster need to be initated by making a call to New(). New will take two parameters, configuration file
 in json format and if of individual cluster. You can keep the config file same accross clusters.
 - Once you import this package you can use the Inbox() channel to receive message
@@ -57,14 +57,14 @@ the server which will use the config file
 
 What are the technology used?
 ----------------------------
-**Language:** GO 
-**Library:** zmq V4 was used
+- **Language:** GO 
+- **Library:** zmq V4 was used
 
 
 Who are the people associated with this work?
 ---------------------------------------------
-Kallol Dey, a senior post graduate student  of CSE IIT Bombay has implemented this.
-Specification, idea and several other guidance was provided by Dr. Sriram Srinivasan
+**Kallol Dey**, a senior post graduate student  of CSE IIT Bombay has implemented this.
+Specification, idea and overall guidance was provided by **Dr. Sriram Srinivasan**.
 
 
 Current status of the project?
