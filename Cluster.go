@@ -34,7 +34,7 @@ type Raftserver struct {
 	PeerHandle string
 	StartAddr  int
 	Fin        sync.WaitGroup
-	RecChan chan *Envelope
+	RecChan    chan *Envelope
 	//Need some handler or identification for connection purpose...
 } //WR
 
@@ -117,9 +117,9 @@ func New(FileName string, PidArg int) *Raftserver { //To create the server objec
 	rfs.Fin.Add(1)
 	//Make the receive and send channels ..
 	//	fmt.Println("Server Instantion done .. returning..")
-	rfs.RecChan =make(chan *Envelope, 1000)
-        go rfs.recRoutine()
-	
+	rfs.RecChan = make(chan *Envelope, 1000)
+	go rfs.recRoutine()
+
 	return rfs
 } //WR
 
@@ -176,7 +176,7 @@ func (r *Raftserver) recRoutine() {
 }
 
 func (r Raftserver) Inbox() chan *Envelope {
-//	retEnv := make(chan *Envelope, 1000)
-//	go recRoutine(retEnv, &r)
+	//	retEnv := make(chan *Envelope, 1000)
+	//	go recRoutine(retEnv, &r)
 	return r.RecChan
 } //FYN

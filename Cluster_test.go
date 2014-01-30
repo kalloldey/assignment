@@ -13,7 +13,7 @@ func GetMsg(server *Raftserver, mail chan string) {
 	mail <- (<-server.Inbox()).Msg
 }
 
- /* This is fine :::
+/* This is fine :::
 func Test_BasicTwoServer(t *testing.T){
 	total:=2
 	var chans [2]chan string
@@ -52,66 +52,64 @@ func Test_BasicTwoServer(t *testing.T){
 func Test_TenServer(t *testing.T) {
 	total := 10
 	var servers [80]*Raftserver
-	for i:= 0; i < total; i++ {
+	for i := 0; i < total; i++ {
 		servers[i] = New("config10.json", i+1)
 	}
-	totMsg:=0
+	totMsg := 0
 	for i := 0; i < total; i++ {
 		time.Sleep(2 * time.Millisecond)
 		smsg := string("Server|" + strconv.Itoa(i+1) + "|says Hi")
 		servers[i].Outbox() <- &Envelope{Pid: -1, MsgId: 0, Msg: smsg}
 		//fmt.Println("Send msg for server :",i+1)
 		for j := 0; j < total; j++ { //you will get total-1 msg ..
-		//	fmt.Println("Waiting for channel")
-			if(i!=j){
-				opt := <-servers[j].Inbox() 
+			//	fmt.Println("Waiting for channel")
+			if i != j {
+				opt := <-servers[j].Inbox()
 				temp := strings.Split(opt.Msg, "|")
-//				fmt.Println("i: ",i,"Sender detected: ", temp[1],"Receiver: ",j+1)
+				//				fmt.Println("i: ",i,"Sender detected: ", temp[1],"Receiver: ",j+1)
 				senderPid, _ := strconv.Atoi(temp[1])
-				if(senderPid == i){
+				if senderPid == i {
 					t.Error("Received own message !!")
 				}
 				totMsg++
 			}
 		}
-		if(totMsg!=(total-1)){
+		if totMsg != (total - 1) {
 			t.Error("Message dropped in between")
 		}
-		totMsg=0
+		totMsg = 0
 	}
 }
 
-
 func Test_TwoHundredServer(t *testing.T) {
-        total := 200
-        var servers [200]*Raftserver
-        for i:= 0; i < total; i++ {
-                servers[i] = New("configSevHundred.json", i+1)
-        }
-        totMsg:=0
-        for i := 0; i < total; i++ {
-	//	fmt.Println("Good Going")
-                time.Sleep(25 * time.Millisecond)
-                smsg := string("Server|" + strconv.Itoa(i+1) + "|says Hi")
-                servers[i].Outbox() <- &Envelope{Pid: -1, MsgId: 0, Msg: smsg}
-                //fmt.Println("Send msg for server :",i+1)
-                for j := 0; j < total; j++ { //you will get total-1 msg ..
-                //      fmt.Println("Waiting for channel")
-                        if(i!=j){
-                                opt := <-servers[j].Inbox()
-                                temp := strings.Split(opt.Msg, "|")
-                              fmt.Println("i: ",i,"Sender detected: ", temp[1],"Receiver: ",j+1)
-                                senderPid, _ := strconv.Atoi(temp[1])
-                                if(senderPid == i){
-                                        t.Error("Received own message !!")
-                                }
-                                totMsg++
-                        }
-                }
-                if(totMsg!=(total-1)){
-                        t.Error("Message dropped in between")
-                }
-                totMsg=0
-        }
-}       
-
+	total := 200
+	var servers [200]*Raftserver
+	for i := 0; i < total; i++ {
+		servers[i] = New("configSevHundred.json", i+1)
+	}
+	totMsg := 0
+	for i := 0; i < total; i++ {
+		//	fmt.Println("Good Going")
+		time.Sleep(25 * time.Millisecond)
+		smsg := string("Server|" + strconv.Itoa(i+1) + "|says Hi")
+		servers[i].Outbox() <- &Envelope{Pid: -1, MsgId: 0, Msg: smsg}
+		//fmt.Println("Send msg for server :",i+1)
+		for j := 0; j < total; j++ { //you will get total-1 msg ..
+			//      fmt.Println("Waiting for channel")
+			if i != j {
+				opt := <-servers[j].Inbox()
+				temp := strings.Split(opt.Msg, "|")
+				fmt.Println("i: ", i, "Sender detected: ", temp[1], "Receiver: ", j+1)
+				senderPid, _ := strconv.Atoi(temp[1])
+				if senderPid == i {
+					t.Error("Received own message !!")
+				}
+				totMsg++
+			}
+		}
+		if totMsg != (total - 1) {
+			t.Error("Message dropped in between")
+		}
+		totMsg = 0
+	}
+}
