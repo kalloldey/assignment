@@ -1,115 +1,96 @@
 package cluster
 
 import (
-	"fmt"
+	//	"fmt"
 	"strconv"
-	"strings"
+//	"strings"
 	"testing" //import go package for testing related functionality
 	"time"
+	//	"sync"
 )
 
-func GetMsg(server *Raftserver, mail chan string) {
-	//	inter:= <-server.Inbox()
-	mail <- (<-server.Inbox()).Msg
+func sendToServers(servers [150]*Raftserver) {
+	total := 150
+	for i := 0; i < total; i++ {
+		smsg := string("Server|" + strconv.Itoa(i+1) + "|says Hi") //Do not change the format of the msg ..
+		servers[i].Outbox() <- &Envelope{Pid: -1, MsgId: 0, Msg: smsg}
+		//fmt.Println("Send msg for server :",i+1)
+		time.Sleep(800 * time.Millisecond)
+	}
 }
 
-/* This is fine :::
-func Test_BasicTwoServer(t *testing.T){
-	total:=2
-	var chans [2]chan string
-	var servers [2]*Raftserver
-	var output [2]string
-        for i:=0;i<total;i++ {
-           chans[i] = make(chan string,1)
-           servers[i]=New("configBASIC.json",i+1)
-        }
-        servers[0].Outbox()  <- &Envelope{Pid:-1,MsgId:0, Msg: "Server ONE"}
-        servers[1].Outbox()  <- &Envelope{Pid:-1,MsgId:0, Msg: "Server TWO"}
-	for i := range chans {
-		go GetMsg(servers[i],chans[i])
-	}
-	for i:=0;i<2;i++{
-		output[i]= <-chans[i]
-	}
+/*
+Test Case Description:
+To check what happend when huge number servers simultaneously broadcasts messages. Here 150 server
+started and they broadcast to all.
+*/
 
-	fmt.Println("In test B")
-	if (output[0]!="Server TWO"){
-		t.Error("Error 1")
-		fmt.Println("Err1:",output[1])
-	}else{
-		fmt.Println("Test : fine")
+func Test_OneHundredFiftyServers(t *testing.T) {
+	total := 150
+	var servers [150]*Raftserver
+	//        var Fin        sync.WaitGroup //dummy .. workaround ..
+	//      Fin.Add(1)
+	for i := 0; i < total; i++ {
+		servers[i] = New("config150.json", i+1)
 	}
-	if(output[1]!="Server ONE"){
-		t.Error("Error 2")
-		fmt.Println("Err2:",output[1])
-	}else{
-		fmt.Println("Test 2 fine")
+	totMsg := 0
+	cumulativeSum := 0
+	go sendToServers(servers)
+	for i := 0; i < total; i++ {
+		for j := 0; j < total; j++ { //you will get total-1 msg ..
+			//      fmt.Println("Waiting for channelof ",j)
+			if i != j {
+				opt := <-servers[j].Inbox()
+				temp := strings.Split(opt.Msg, "|")
+				//                                fmt.Println("i=",i,"Sender: ", temp[1], "Receiver: ", j+1)
+				senderPid, _ := strconv.Atoi(temp[1])
+				if senderPid == i {
+					t.Error("Received own message !!")
+				}
+				totMsg++
+				cumulativeSum++
+			}
+		}
+		if totMsg != (total - 1) {
+			t.Error("Message dropped in between")
+		}
+		totMsg = 0
 	}
-//	server1.Wait()
-//	server2.Wait()
-}*/
+	//Total cumulative message is 150* 149 =22350
+	if cumulativeSum != 22350 {
+		t.Error("Total message is not same as expected")
+	}
+	//        Fin.Wait()
+}
 
-func Test_TenServer(t *testing.T) {
+/*
+Test Description: Test with HUGE size message. The goal is to check if the huge size
+message is delivered properly. This is done in Every server send to its next server in
+this manner with last server send to first server. Circle manner precisely.
+Message Size: 37888 bytes
+*/
+func Test_HugeMessagTenServer(t *testing.T) {
 	total := 10
-	var servers [80]*Raftserver
+	var servers [10]*Raftserver
 	for i := 0; i < total; i++ {
 		servers[i] = New("config10.json", i+1)
 	}
-	totMsg := 0
+	hugeMsg := "abcdef1238910212320**23jdfm@@89200!!!"
+
+	for i := 0; i < 10; i++ {
+		hugeMsg = string(hugeMsg + hugeMsg)
+	}
+
 	for i := 0; i < total; i++ {
 		time.Sleep(2 * time.Millisecond)
-		smsg := string("Server|" + strconv.Itoa(i+1) + "|says Hi")
-		servers[i].Outbox() <- &Envelope{Pid: -1, MsgId: 0, Msg: smsg}
+		willSendTo := (i+1)%total + 1
+		servers[i].Outbox() <- &Envelope{Pid: willSendTo, MsgId: 0, Msg: hugeMsg}
 		//fmt.Println("Send msg for server :",i+1)
-		for j := 0; j < total; j++ { //you will get total-1 msg ..
-			//	fmt.Println("Waiting for channel")
-			if i != j {
-				opt := <-servers[j].Inbox()
-				temp := strings.Split(opt.Msg, "|")
-				//				fmt.Println("i: ",i,"Sender detected: ", temp[1],"Receiver: ",j+1)
-				senderPid, _ := strconv.Atoi(temp[1])
-				if senderPid == i {
-					t.Error("Received own message !!")
-				}
-				totMsg++
-			}
-		}
-		if totMsg != (total - 1) {
-			t.Error("Message dropped in between")
-		}
-		totMsg = 0
 	}
-}
-
-func Test_TwoHundredServer(t *testing.T) {
-	total := 200
-	var servers [200]*Raftserver
 	for i := 0; i < total; i++ {
-		servers[i] = New("configSevHundred.json", i+1)
-	}
-	totMsg := 0
-	for i := 0; i < total; i++ {
-		//	fmt.Println("Good Going")
-		time.Sleep(25 * time.Millisecond)
-		smsg := string("Server|" + strconv.Itoa(i+1) + "|says Hi")
-		servers[i].Outbox() <- &Envelope{Pid: -1, MsgId: 0, Msg: smsg}
-		//fmt.Println("Send msg for server :",i+1)
-		for j := 0; j < total; j++ { //you will get total-1 msg ..
-			//      fmt.Println("Waiting for channel")
-			if i != j {
-				opt := <-servers[j].Inbox()
-				temp := strings.Split(opt.Msg, "|")
-				fmt.Println("i: ", i, "Sender detected: ", temp[1], "Receiver: ", j+1)
-				senderPid, _ := strconv.Atoi(temp[1])
-				if senderPid == i {
-					t.Error("Received own message !!")
-				}
-				totMsg++
-			}
+		opt := <-servers[i].Inbox()
+		if opt.Msg != hugeMsg {
+			t.Error("Not Same")
 		}
-		if totMsg != (total - 1) {
-			t.Error("Message dropped in between")
-		}
-		totMsg = 0
 	}
 }

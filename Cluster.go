@@ -105,6 +105,7 @@ func New(FileName string, PidArg int) *Raftserver { //To create the server objec
 	//File data read ended ....
 	rfs.MyPid = PidArg
 	rfs.TotalPeer = len(temp) - 1
+	//	fmt.Println("[Instantiate]Total Peer: ",rfs.TotalPeer)
 	//Read Peer nethandle form file
 	rfs.StartAddr = settings.StartAddr
 	//	fmt.Println("[New]:startaddr", rfs.StartAddr)
@@ -117,7 +118,7 @@ func New(FileName string, PidArg int) *Raftserver { //To create the server objec
 	rfs.Fin.Add(1)
 	//Make the receive and send channels ..
 	//	fmt.Println("Server Instantion done .. returning..")
-	rfs.RecChan = make(chan *Envelope, 1000)
+	rfs.RecChan = make(chan *Envelope, 1)
 	go rfs.recRoutine()
 
 	return rfs
@@ -134,7 +135,7 @@ func sendRoutine(msg chan *Envelope, r *Raftserver) {
 			endpoint := string(r.PeerHandle + strconv.Itoa(r.StartAddr+r.PeersPid[i]))
 			client, _ := zmq.NewSocket(zmq.DEALER)
 			client.Connect(endpoint)
-			//                    fmt.Println("[send endpoint]: ",endpoint)
+			//			fmt.Println("[Server ]", r.MyPid,"sending msg to: ",r.PeersPid[i])
 			client.SendMessage(sendmsg)
 			client.Close()
 		}
@@ -161,9 +162,9 @@ func (r *Raftserver) recRoutine() {
 		//	fmt.Println("[Inbox]-entry befor RecvMsg")
 		msg, err := r.Server.RecvMessage(0)
 		if err != nil {
-			fmt.Println("Error in receiving msg ..")
+			//fmt.Println("Error in receiving msg ..")
 		}
-		//fmt.Println("[Inbox of ",r.MyPid,"] Msg received", msg, "|| size of msg array : ", len(msg))
+		//		fmt.Println("[Inbox of ",r.MyPid,"] Msg received", msg)
 		//msg is a string of format Pid#MsgId#Msg
 		var temp []string
 		temp = strings.Split(msg[0], "#") //concat all of msg array dont just take only first
@@ -172,6 +173,7 @@ func (r *Raftserver) recRoutine() {
 		interEnv.MsgId, _ = strconv.Atoi(temp[1])
 		interEnv.Msg = temp[2]
 		r.RecChan <- &interEnv
+		//		<- r.RecChan
 	}
 }
 
